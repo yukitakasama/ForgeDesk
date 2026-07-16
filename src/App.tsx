@@ -32,8 +32,10 @@ export default function App() {
   }, [bootstrap]);
 
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div
+      className={`app-shell${activeView === "settings" ? " is-settings" : ""}`}
+    >
+      {activeView !== "settings" && <Sidebar />}
       <main className="app-main">
         {activeView === "workspace" && <Workspace />}
         {activeView === "automations" && <AutomationsView />}

@@ -675,19 +675,17 @@ function SettingsContent({ page }: { page: SettingsPage }) {
 
         <section className="settings-section">
           <SectionTitle icon={<FlaskConical size={17} />} title="实验能力" />
-          <label className="toggle-row">
+          <div className="toggle-row">
             <div>
               <strong>实验 app-server API</strong>
               <span>启用远程控制、实时语音、动态工具和高级进程接口。</span>
             </div>
-            <input
-              type="checkbox"
+            <SettingsSwitch
               checked={experimentalApi}
-              onChange={(event) =>
-                void setExperimentalApi(event.target.checked)
-              }
+              label="实验 app-server API"
+              onChange={() => void setExperimentalApi(!experimentalApi)}
             />
-          </label>
+          </div>
           <div className="capability-grid">
             <Capability
               icon={<Activity size={15} />}
