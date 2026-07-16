@@ -1,0 +1,11 @@
+/node_modules/
+/dist/
+/test-results/
+/playwright-report/
+/.vite/
+/.pnpm-store/
+/.playwright-mcp/
+/屏幕截图*.png
+/settings-*.png
+*.log
+.DS_Store
