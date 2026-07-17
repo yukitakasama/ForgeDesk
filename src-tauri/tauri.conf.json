@@ -39,6 +39,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
+    "icon": ["icons/icon.png"],
     "category": "DeveloperTool",
     "shortDescription": "Independent Codex desktop client",
     "longDescription": "ForgeDesk is an independent open-source desktop client for Codex CLI."
