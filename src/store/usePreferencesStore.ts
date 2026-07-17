@@ -4,6 +4,29 @@ import { createJSONStorage, persist } from "zustand/middleware";
 export type SendShortcut = "enter" | "ctrl-enter";
 export type FollowUpBehavior = "queue" | "steer";
 export type CompletionNotification = "always" | "unfocused" | "never";
+export type AppearanceTheme = "system" | "light" | "dark";
+export type ReduceMotion = "system" | "on" | "off";
+export type DiffMarker = "color" | "sign";
+
+export interface AppearancePreferences {
+  theme: AppearanceTheme;
+  accentColor: string;
+  lightBackground: string;
+  lightForeground: string;
+  darkBackground: string;
+  darkForeground: string;
+  uiFont: string;
+  codeFont: string;
+  lightTranslucentSidebar: boolean;
+  darkTranslucentSidebar: boolean;
+  lightContrast: number;
+  darkContrast: number;
+  pointerCursor: boolean;
+  reduceMotion: ReduceMotion;
+  uiFontSize: number;
+  codeFontSize: number;
+  diffMarker: DiffMarker;
+}
 
 interface PreferencesState {
   defaultFileTarget: string;
@@ -19,6 +42,7 @@ interface PreferencesState {
   completionNotification: CompletionNotification;
   permissionNotifications: boolean;
   questionNotifications: boolean;
+  appearance: AppearancePreferences;
   updatePreference: <Key extends keyof PreferenceValues>(
     key: Key,
     value: PreferenceValues[Key],
@@ -43,6 +67,25 @@ export const usePreferencesStore = create<PreferencesState>()(
       completionNotification: "unfocused",
       permissionNotifications: true,
       questionNotifications: true,
+      appearance: {
+        theme: "system",
+        accentColor: "#339CFF",
+        lightBackground: "#FFFFFF",
+        lightForeground: "#1A1C1F",
+        darkBackground: "#181818",
+        darkForeground: "#FFFFFF",
+        uiFont: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+        codeFont: "ui-monospace, SFMono-Regular, Consolas, monospace",
+        lightTranslucentSidebar: true,
+        darkTranslucentSidebar: true,
+        lightContrast: 45,
+        darkContrast: 60,
+        pointerCursor: false,
+        reduceMotion: "system",
+        uiFontSize: 14,
+        codeFontSize: 12,
+        diffMarker: "color",
+      },
       updatePreference: (key, value) => set({ [key]: value }),
     }),
     {

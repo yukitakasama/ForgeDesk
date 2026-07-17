@@ -55,4 +55,18 @@ describe("常规设置", () => {
     expect(screen.getByRole("dialog", { name: "开源许可证" })).toBeTruthy();
     expect(screen.getByText(/Third-party notices/)).toBeTruthy();
   });
+
+  it("可持久更新外观主题与偏好", () => {
+    render(<SettingsView />);
+    fireEvent.click(screen.getByRole("button", { name: "外观" }));
+    fireEvent.click(screen.getByRole("button", { name: "深色" }));
+    fireEvent.click(screen.getByRole("switch", { name: "使用指针光标" }));
+
+    expect(usePreferencesStore.getState().appearance).toMatchObject({
+      theme: "dark",
+      pointerCursor: true,
+    });
+    expect(screen.getByLabelText("浅色主题对比度")).toBeTruthy();
+    expect(screen.getByLabelText("深色主题对比度")).toBeTruthy();
+  });
 });

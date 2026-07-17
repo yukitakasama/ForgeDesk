@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
 import {
+  type AppearancePreferences,
   requestNotificationPermission,
   usePreferencesStore,
 } from "../store/usePreferencesStore";
@@ -311,9 +312,15 @@ function SettingsContent({ page }: { page: SettingsPage }) {
   const questionNotifications = usePreferencesStore(
     (state) => state.questionNotifications,
   );
+  const appearance = usePreferencesStore((state) => state.appearance);
   const updatePreference = usePreferencesStore(
     (state) => state.updatePreference,
   );
+
+  const updateAppearance = <Key extends keyof AppearancePreferences>(
+    key: Key,
+    value: AppearancePreferences[Key],
+  ) => updatePreference("appearance", { ...appearance, [key]: value });
 
   if (page === "account") {
     return (
@@ -745,6 +752,146 @@ function SettingsContent({ page }: { page: SettingsPage }) {
     );
   }
 
+  if (page === "appearance") {
+    return (
+      <div className="settings-layout appearance-settings">
+        <section className="appearance-theme-section" aria-labelledby="theme-title">
+          <h2 id="theme-title">主题</h2>
+          <div className="appearance-theme-options">
+            {(
+              [
+                ["system", "系统"],
+                ["light", "浅色"],
+                ["dark", "深色"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                className={`theme-choice is-${value}${appearance.theme === value ? " is-active" : ""}`}
+                aria-pressed={appearance.theme === value}
+                onClick={() => updateAppearance("theme", value)}
+              >
+                <span className="theme-choice-preview" aria-hidden="true">
+                  <i />
+                  <b />
+                  <em />
+                </span>
+                <strong>{label}</strong>
+              </button>
+            ))}
+          </div>
+          <div className="appearance-diff-preview" aria-label="差异显示预览">
+            <code>
+              <span>1</span> <i>const</i> <b>themePreview</b>: <i>ThemeConfig</i> = {"{"}
+            </code>
+            <code className="is-removed">
+              <span>2</span> &nbsp; surface: <b>"sidebar"</b>,
+            </code>
+            <code className="is-added">
+              <span>2</span> &nbsp; surface: <b>"sidebar-elevated"</b>,
+            </code>
+            <code>
+              <span>3</span> &nbsp; contrast: <b>60</b>,
+            </code>
+            <code>
+              <span>4</span> {"};"}
+            </code>
+          </div>
+        </section>
+
+        <AppearanceThemeGroup
+          title="浅色主题"
+          tone="light"
+          appearance={appearance}
+          updateAppearance={updateAppearance}
+        />
+        <AppearanceThemeGroup
+          title="深色主题"
+          tone="dark"
+          appearance={appearance}
+          updateAppearance={updateAppearance}
+        />
+
+        <SettingsGroup title="偏好设置">
+          <SettingRow
+            label="使用指针光标"
+            description="悬停交互元素时切换为指针光标"
+            control={
+              <SettingsSwitch
+                checked={appearance.pointerCursor}
+                label="使用指针光标"
+                onChange={() =>
+                  updateAppearance("pointerCursor", !appearance.pointerCursor)
+                }
+              />
+            }
+          />
+          <SettingRow
+            label="减少动态效果"
+            description="减少动画效果或匹配系统设置"
+            control={
+              <SegmentedControl
+                value={appearance.reduceMotion}
+                options={[
+                  ["system", "系统"],
+                  ["on", "开启"],
+                  ["off", "关闭"],
+                ]}
+                onChange={(value) =>
+                  updateAppearance(
+                    "reduceMotion",
+                    value as AppearancePreferences["reduceMotion"],
+                  )
+                }
+              />
+            }
+          />
+          <SettingRow
+            label="UI 字号"
+            description="调整 ForgeDesk 界面使用的基准字号"
+            control={
+              <AppearanceNumberInput
+                label="UI 字号"
+                value={appearance.uiFontSize}
+                onChange={(value) => updateAppearance("uiFontSize", value)}
+              />
+            }
+          />
+          <SettingRow
+            label="代码字体大小"
+            description="调整任务和差异对比中代码使用的基础字号"
+            control={
+              <AppearanceNumberInput
+                label="代码字体大小"
+                value={appearance.codeFontSize}
+                onChange={(value) => updateAppearance("codeFontSize", value)}
+              />
+            }
+          />
+          <SettingRow
+            label="差异标记"
+            description="使用颜色或 +/- 标记显示更改"
+            control={
+              <SegmentedControl
+                value={appearance.diffMarker}
+                options={[
+                  ["color", "颜色"],
+                  ["sign", "+/-"],
+                ]}
+                onChange={(value) =>
+                  updateAppearance(
+                    "diffMarker",
+                    value as AppearancePreferences["diffMarker"],
+                  )
+                }
+              />
+            }
+          />
+        </SettingsGroup>
+      </div>
+    );
+  }
+
   if (page === "connection" || page === "environment" || page === "configuration") {
     return (
       <div className="settings-layout">
@@ -824,7 +971,6 @@ function SettingsContent({ page }: { page: SettingsPage }) {
   }
 
   const emptyState = {
-    appearance: ["界面外观", "ForgeDesk 当前跟随内置深色工作台主题。"],
     personalization: ["个性化体验", "模型与推理强度可在每个任务的输入栏中调整。"],
     pet: ["桌面宠物", "桌面伙伴功能尚未启用，后续版本将在这里提供设置。"],
     shortcuts: ["快捷键", "使用 Enter 发送消息，Shift + Enter 在输入框中换行。"],
@@ -842,6 +988,165 @@ function SettingsContent({ page }: { page: SettingsPage }) {
         lines={[emptyState[1]]}
       />
     </div>
+  );
+}
+
+function AppearanceThemeGroup({
+  title,
+  tone,
+  appearance,
+  updateAppearance,
+}: {
+  title: string;
+  tone: "light" | "dark";
+  appearance: AppearancePreferences;
+  updateAppearance: <Key extends keyof AppearancePreferences>(
+    key: Key,
+    value: AppearancePreferences[Key],
+  ) => void;
+}) {
+  const backgroundKey = tone === "light" ? "lightBackground" : "darkBackground";
+  const foregroundKey = tone === "light" ? "lightForeground" : "darkForeground";
+  const contrastKey = tone === "light" ? "lightContrast" : "darkContrast";
+  const translucentKey =
+    tone === "light" ? "lightTranslucentSidebar" : "darkTranslucentSidebar";
+
+  return (
+    <SettingsGroup title={title}>
+      <SettingRow
+        label="主题预设"
+        description="Codex"
+        control={<span className="appearance-theme-preset">Aa&nbsp;&nbsp; Codex</span>}
+      />
+      <SettingRow
+        label="强调色"
+        control={
+          <AppearanceColorInput
+            label={`${title}强调色`}
+            value={appearance.accentColor}
+            onChange={(value) => updateAppearance("accentColor", value)}
+          />
+        }
+      />
+      <SettingRow
+        label="背景"
+        control={
+          <AppearanceColorInput
+            label={`${title}背景`}
+            value={appearance[backgroundKey]}
+            onChange={(value) => updateAppearance(backgroundKey, value)}
+          />
+        }
+      />
+      <SettingRow
+        label="前景"
+        control={
+          <AppearanceColorInput
+            label={`${title}前景`}
+            value={appearance[foregroundKey]}
+            onChange={(value) => updateAppearance(foregroundKey, value)}
+          />
+        }
+      />
+      <SettingRow
+        label="UI 字体"
+        control={
+          <input
+            className="appearance-text-input"
+            aria-label={`${title} UI 字体`}
+            value={appearance.uiFont}
+            onChange={(event) => updateAppearance("uiFont", event.target.value)}
+          />
+        }
+      />
+      <SettingRow
+        label="代码字体"
+        control={
+          <input
+            className="appearance-text-input"
+            aria-label={`${title}代码字体`}
+            value={appearance.codeFont}
+            onChange={(event) => updateAppearance("codeFont", event.target.value)}
+          />
+        }
+      />
+      <SettingRow
+        label="半透明侧边栏"
+        control={
+          <SettingsSwitch
+            checked={appearance[translucentKey]}
+            label={`${title}半透明侧边栏`}
+            onChange={() =>
+              updateAppearance(translucentKey, !appearance[translucentKey])
+            }
+          />
+        }
+      />
+      <SettingRow
+        label="对比度"
+        control={
+          <label className="appearance-range">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={appearance[contrastKey]}
+              aria-label={`${title}对比度`}
+              onChange={(event) =>
+                updateAppearance(contrastKey, Number(event.target.value))
+              }
+            />
+            <span>{appearance[contrastKey]}</span>
+          </label>
+        }
+      />
+    </SettingsGroup>
+  );
+}
+
+function AppearanceColorInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="appearance-color-input">
+      <input
+        type="color"
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value.toUpperCase())}
+      />
+      <span>{value}</span>
+    </label>
+  );
+}
+
+function AppearanceNumberInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="appearance-number-input">
+      <input
+        type="number"
+        min="8"
+        max="24"
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+      <span>px</span>
+    </label>
   );
 }
 
