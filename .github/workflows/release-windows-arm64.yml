@@ -1,6 +1,10 @@
 name: Release Windows ARM64
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/release-windows-arm64.yml
   workflow_dispatch:
     inputs:
       release_tag:
@@ -17,11 +21,12 @@ jobs:
     env:
       CC_aarch64_pc_windows_msvc: clang-cl
       CXX_aarch64_pc_windows_msvc: clang-cl
+      RELEASE_TAG: ${{ inputs.release_tag || 'v0.1.0-alpha.2' }}
     steps:
       - name: Checkout release source
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_tag }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -50,11 +55,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $asset = Resolve-Path "src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*setup.exe"
-          gh release upload "${{ inputs.release_tag }}" "$asset" --clobber
+          gh release upload "$env:RELEASE_TAG" "$asset" --clobber
 
       - name: Archive installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ForgeDesk-${{ inputs.release_tag }}-windows-arm64
+          name: ForgeDesk-${{ env.RELEASE_TAG }}-windows-arm64
           path: src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*setup.exe
           if-no-files-found: error
