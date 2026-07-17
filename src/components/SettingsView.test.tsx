@@ -69,4 +69,26 @@ describe("常规设置", () => {
     expect(screen.getByLabelText("浅色主题对比度")).toBeTruthy();
     expect(screen.getByLabelText("深色主题对比度")).toBeTruthy();
   });
+
+  it("可配置本地 API 路由", () => {
+    render(<SettingsView />);
+    fireEvent.click(screen.getByRole("button", { name: "连接" }));
+    fireEvent.click(screen.getByRole("switch", { name: "启用本地 API 路由" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "上游 API 格式" }), {
+      target: { value: "anthropicMessages" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "上游 API 地址" }), {
+      target: { value: "https://api.anthropic.com/v1" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "上游模型" }), {
+      target: { value: "claude-sonnet-4-5" },
+    });
+
+    expect(usePreferencesStore.getState().apiRouter).toMatchObject({
+      enabled: true,
+      upstreamFormat: "anthropicMessages",
+      endpoint: "https://api.anthropic.com/v1",
+      model: "claude-sonnet-4-5",
+    });
+  });
 });

@@ -9,9 +9,13 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
-    codex::{resolve_cli, run_cli_json, run_cli_text, CodexManager},
+    codex::{resolve_cli, run_cli_json, run_cli_text, CodexManager, CodexProviderOverride},
     db::Database,
     models::{AutomationInput, AutomationSpec, CliRuntime, CloudTask, Project, WorktreeInfo},
+    router::{
+        api_key_status, save_api_key, RouterConfig, RouterKeyStatus, RouterManager,
+        RouterTestResult,
+    },
 };
 
 type CommandResult<T> = Result<T, String>;
@@ -26,12 +30,48 @@ pub async fn codex_start(
     manager: State<'_, CodexManager>,
     cli_path: Option<String>,
     experimental_api: bool,
+    router_config: Option<RouterConfig>,
 ) -> CommandResult<CliRuntime> {
-    let result = manager.start(&app, cli_path, experimental_api).await;
+    let router = app.state::<RouterManager>();
+    let provider = match router_config.filter(|config| config.enabled) {
+        Some(config) => {
+            let runtime = router.ensure_started(config).await.map_err(command_error)?;
+            Some(CodexProviderOverride {
+                base_url: runtime.base_url,
+                model: runtime.model,
+                token: runtime.token,
+            })
+        }
+        None => {
+            router.stop().await;
+            None
+        }
+    };
+    let result = manager
+        .start(&app, cli_path, experimental_api, provider)
+        .await;
     if let Err(error) = &result {
         tracing::error!(error = %error, "Codex app-server 启动失败");
     }
     result.map_err(command_error)
+}
+
+#[tauri::command]
+pub fn router_save_key(api_key: String) -> CommandResult<()> {
+    save_api_key(&api_key).map_err(command_error)
+}
+
+#[tauri::command]
+pub fn router_key_status() -> CommandResult<RouterKeyStatus> {
+    api_key_status().map_err(command_error)
+}
+
+#[tauri::command]
+pub async fn router_test(
+    manager: State<'_, RouterManager>,
+    config: RouterConfig,
+) -> CommandResult<RouterTestResult> {
+    manager.test(config).await.map_err(command_error)
 }
 
 #[tauri::command]

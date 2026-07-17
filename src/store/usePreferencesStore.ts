@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { RouterConfig } from "../lib/types";
 
 export type SendShortcut = "enter" | "ctrl-enter";
 export type FollowUpBehavior = "queue" | "steer";
@@ -43,6 +44,7 @@ interface PreferencesState {
   permissionNotifications: boolean;
   questionNotifications: boolean;
   appearance: AppearancePreferences;
+  apiRouter: RouterConfig;
   updatePreference: <Key extends keyof PreferenceValues>(
     key: Key,
     value: PreferenceValues[Key],
@@ -85,6 +87,12 @@ export const usePreferencesStore = create<PreferencesState>()(
         uiFontSize: 14,
         codeFontSize: 12,
         diffMarker: "color",
+      },
+      apiRouter: {
+        enabled: false,
+        upstreamFormat: "openaiChat",
+        endpoint: "",
+        model: "",
       },
       updatePreference: (key, value) => set({ [key]: value }),
     }),

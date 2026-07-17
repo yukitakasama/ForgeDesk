@@ -2,6 +2,7 @@ mod codex;
 mod commands;
 mod db;
 mod models;
+mod router;
 
 use tauri::Manager;
 use tracing_subscriber::EnvFilter;
@@ -10,9 +11,10 @@ use codex::CodexManager;
 use commands::{
     automation_delete, automation_list, automation_save, cli_doctor, cloud_list, codex_request,
     codex_respond, codex_start, codex_stop, git_status, project_add, project_list, project_remove,
-    worktree_create, worktree_remove,
+    router_key_status, router_save_key, router_test, worktree_create, worktree_remove,
 };
 use db::Database;
+use router::RouterManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -30,6 +32,7 @@ pub fn run() {
             let database = tauri::async_runtime::block_on(Database::open(&app.handle()))?;
             app.manage(database);
             app.manage(CodexManager::default());
+            app.manage(RouterManager::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -37,6 +40,9 @@ pub fn run() {
             codex_stop,
             codex_request,
             codex_respond,
+            router_save_key,
+            router_key_status,
+            router_test,
             project_list,
             project_add,
             project_remove,

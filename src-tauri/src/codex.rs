@@ -23,6 +23,13 @@ use crate::models::CliRuntime;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(45);
 
+#[derive(Clone, Debug)]
+pub struct CodexProviderOverride {
+    pub base_url: String,
+    pub model: String,
+    pub token: String,
+}
+
 struct CodexProcess {
     child: Child,
     stdin: Arc<Mutex<ChildStdin>>,
@@ -51,11 +58,33 @@ impl CodexManager {
         app: &AppHandle,
         cli_path: Option<String>,
         experimental_api: bool,
+        provider: Option<CodexProviderOverride>,
     ) -> Result<CliRuntime> {
         self.stop().await?;
         let path = resolve_cli(cli_path.as_deref())?;
         let version = run_cli_text(&path, &["--version"]).await?;
         let mut command = cli_command(&path);
+        if let Some(provider) = provider {
+            let base_url = provider.base_url.trim_end_matches('/');
+            let base_url = format!("{base_url}/v1");
+            command
+                .args(["-c", "model_provider=\"forgedesk\""])
+                .args(["-c", &format!("model={}", config_string(&provider.model))])
+                .args(["-c", "model_providers.forgedesk.name=\"ForgeDesk Router\""])
+                .args([
+                    "-c",
+                    &format!(
+                        "model_providers.forgedesk.base_url={}",
+                        config_string(&base_url)
+                    ),
+                ])
+                .args([
+                    "-c",
+                    "model_providers.forgedesk.env_key=\"FORGEDESK_ROUTER_TOKEN\"",
+                ])
+                .args(["-c", "model_providers.forgedesk.wire_api=\"responses\""])
+                .env("FORGEDESK_ROUTER_TOKEN", provider.token);
+        }
         command
             .args(["app-server", "--stdio"])
             .stdin(Stdio::piped())
@@ -359,13 +388,23 @@ fn id_key(value: &Value) -> String {
 
 fn redact_line(line: &str) -> String {
     let mut redacted = line.trim().replace('\0', "");
-    for marker in ["sk-", "Bearer ", "OPENAI_API_KEY=", "CODEX_ACCESS_TOKEN="] {
+    for marker in [
+        "sk-",
+        "Bearer ",
+        "OPENAI_API_KEY=",
+        "CODEX_ACCESS_TOKEN=",
+        "FORGEDESK_ROUTER_TOKEN=",
+    ] {
         if let Some(index) = redacted.find(marker) {
             redacted.truncate(index);
             redacted.push_str("[已脱敏]");
         }
     }
     redacted.chars().take(2000).collect()
+}
+
+fn config_string(value: &str) -> String {
+    serde_json::to_string(value).expect("字符串序列化不应失败")
 }
 
 fn configure_background_process(command: &mut Command) {
@@ -392,6 +431,9 @@ mod tests {
         let redacted = redact_line(line);
         assert_eq!(redacted, "request failed [已脱敏]");
         assert!(!redacted.contains("secret-value"));
+
+        let router_line = "env FORGEDESK_ROUTER_TOKEN=local-secret";
+        assert_eq!(redact_line(router_line), "env [已脱敏]");
     }
 
     #[test]

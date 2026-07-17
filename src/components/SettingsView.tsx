@@ -1,4 +1,4 @@
-import { useDeferredValue, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import {
   Activity,
   ArrowLeft,
@@ -33,6 +33,11 @@ import {
   usePreferencesStore,
 } from "../store/usePreferencesStore";
 import thirdPartyNotices from "../../THIRD_PARTY_NOTICES.md?raw";
+import {
+  getRouterKeyStatus,
+  saveRouterApiKey,
+  testApiRouter,
+} from "../lib/bridge";
 
 type SettingsPage =
   | "general"
@@ -266,6 +271,10 @@ export default function SettingsView() {
 function SettingsContent({ page }: { page: SettingsPage }) {
   const [importedAt, setImportedAt] = useState("12 小时前");
   const [licensesOpen, setLicensesOpen] = useState(false);
+  const [routerApiKey, setRouterApiKey] = useState("");
+  const [routerKeySaved, setRouterKeySaved] = useState(false);
+  const [routerBusy, setRouterBusy] = useState(false);
+  const [routerFeedback, setRouterFeedback] = useState("");
   const runtime = useAppStore((state) => state.runtime);
   const account = useAppStore((state) => state.account);
   const loginWithChatGpt = useAppStore((state) => state.loginWithChatGpt);
@@ -275,6 +284,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
   const setExperimentalApi = useAppStore(
     (state) => state.setExperimentalApi,
   );
+  const applyRouterConfig = useAppStore((state) => state.applyRouterConfig);
   const capabilities = useAppStore((state) => state.capabilities);
   const diagnostics = useAppStore((state) => state.diagnostics);
   const setActiveView = useAppStore((state) => state.setActiveView);
@@ -313,6 +323,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
     (state) => state.questionNotifications,
   );
   const appearance = usePreferencesStore((state) => state.appearance);
+  const apiRouter = usePreferencesStore((state) => state.apiRouter);
   const updatePreference = usePreferencesStore(
     (state) => state.updatePreference,
   );
@@ -321,6 +332,51 @@ function SettingsContent({ page }: { page: SettingsPage }) {
     key: Key,
     value: AppearancePreferences[Key],
   ) => updatePreference("appearance", { ...appearance, [key]: value });
+
+  useEffect(() => {
+    void getRouterKeyStatus()
+      .then((status) => setRouterKeySaved(status.saved))
+      .catch(() => setRouterKeySaved(false));
+  }, []);
+
+  const updateRouter = <Key extends keyof typeof apiRouter>(
+    key: Key,
+    value: (typeof apiRouter)[Key],
+  ) => updatePreference("apiRouter", { ...apiRouter, [key]: value });
+
+  const testRouterConnection = async () => {
+    setRouterBusy(true);
+    setRouterFeedback("正在连接上游...");
+    try {
+      if (routerApiKey.trim()) {
+        await saveRouterApiKey(routerApiKey.trim());
+        setRouterKeySaved(true);
+      }
+      const result = await testApiRouter({ ...apiRouter, enabled: true });
+      setRouterFeedback(`连接成功 · HTTP ${result.status} · ${result.latencyMs} ms`);
+    } catch (error) {
+      setRouterFeedback(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRouterBusy(false);
+    }
+  };
+
+  const activateRouter = async () => {
+    setRouterBusy(true);
+    setRouterFeedback(apiRouter.enabled ? "正在重启 Codex 并接入本地路由..." : "正在恢复默认 Codex 连接...");
+    try {
+      await applyRouterConfig(apiRouter, routerApiKey);
+      if (routerApiKey.trim()) {
+        setRouterKeySaved(true);
+        setRouterApiKey("");
+      }
+      setRouterFeedback(apiRouter.enabled ? "本地路由已启用" : "本地路由已停用");
+    } catch (error) {
+      setRouterFeedback(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRouterBusy(false);
+    }
+  };
 
   if (page === "account") {
     return (
@@ -892,7 +948,142 @@ function SettingsContent({ page }: { page: SettingsPage }) {
     );
   }
 
-  if (page === "connection" || page === "environment" || page === "configuration") {
+  if (page === "connection") {
+    return (
+      <div className="settings-layout">
+        <SettingsGroup title="本地 API 路由">
+          <SettingRow
+            label="启用本地路由"
+            description="Codex 请求仅发送到 127.0.0.1，再由 ForgeDesk 转换并转发到上游。"
+            control={
+              <SettingsSwitch
+                checked={apiRouter.enabled}
+                label="启用本地 API 路由"
+                onChange={() => updateRouter("enabled", !apiRouter.enabled)}
+              />
+            }
+          />
+          <SettingRow
+            label="上游 API 格式"
+            description="根据上游服务实际支持的协议选择"
+            control={
+              <SettingsSelect
+                ariaLabel="上游 API 格式"
+                value={apiRouter.upstreamFormat}
+                onChange={(value) =>
+                  updateRouter(
+                    "upstreamFormat",
+                    value as typeof apiRouter.upstreamFormat,
+                  )
+                }
+                options={[
+                  ["openaiChat", "OpenAI Chat Completions"],
+                  ["anthropicMessages", "Anthropic Messages"],
+                ]}
+              />
+            }
+          />
+          <SettingRow
+            label="上游地址"
+            description="填写 API 根地址或完整接口地址；远程服务必须使用 HTTPS。"
+            control={
+              <input
+                className="settings-route-input"
+                aria-label="上游 API 地址"
+                value={apiRouter.endpoint}
+                placeholder={
+                  apiRouter.upstreamFormat === "anthropicMessages"
+                    ? "https://api.anthropic.com/v1"
+                    : "https://api.example.com/v1"
+                }
+                onChange={(event) => updateRouter("endpoint", event.target.value)}
+              />
+            }
+          />
+          <SettingRow
+            label="上游模型"
+            description="所有 Codex 请求将路由到这个模型标识"
+            control={
+              <input
+                className="settings-route-input"
+                aria-label="上游模型"
+                value={apiRouter.model}
+                placeholder={
+                  apiRouter.upstreamFormat === "anthropicMessages"
+                    ? "claude-sonnet-4-5"
+                    : "模型 ID"
+                }
+                onChange={(event) => updateRouter("model", event.target.value)}
+              />
+            }
+          />
+          <SettingRow
+            label="API Key"
+            description={
+              routerKeySaved
+                ? "已保存在当前 Windows 用户的凭据库中"
+                : "密钥仅发送到 Windows Credential Manager，不进入项目或前端存储"
+            }
+            control={
+              <div className="router-key-control">
+                <input
+                  type="password"
+                  className="settings-route-input"
+                  aria-label="上游 API Key"
+                  autoComplete="new-password"
+                  value={routerApiKey}
+                  placeholder={routerKeySaved ? "已安全保存，留空保持不变" : "输入 API Key"}
+                  onChange={(event) => setRouterApiKey(event.target.value)}
+                />
+                <span className={routerKeySaved ? "is-saved" : ""}>
+                  {routerKeySaved ? "凭据已保存" : "尚未保存"}
+                </span>
+              </div>
+            }
+          />
+        </SettingsGroup>
+
+        <section className="settings-section router-actions">
+          <div>
+            <SectionTitle icon={<RadioTower size={17} />} title="连接验证" />
+            <p>测试会发送一个最小请求；应用配置将重启 Codex app-server。</p>
+            {routerFeedback && <output>{routerFeedback}</output>}
+          </div>
+          <div>
+            <button
+              className="settings-button"
+              disabled={routerBusy || !apiRouter.endpoint || !apiRouter.model}
+              onClick={() => void testRouterConnection()}
+            >
+              测试上游
+            </button>
+            <button
+              className="settings-button primary"
+              disabled={
+                routerBusy ||
+                (apiRouter.enabled &&
+                  (!apiRouter.endpoint || !apiRouter.model || (!routerKeySaved && !routerApiKey)))
+              }
+              onClick={() => void activateRouter()}
+            >
+              {routerBusy ? "处理中..." : "应用并重启 Codex"}
+            </button>
+          </div>
+        </section>
+
+        <InfoSection
+          title="安全边界"
+          icon={<ShieldCheck size={17} />}
+          lines={[
+            "本地服务只监听 127.0.0.1，并使用每次启动随机生成的 Bearer token。",
+            "远程 HTTP 地址会被拒绝，诊断日志不会记录上游 API Key。",
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (page === "environment" || page === "configuration") {
     return (
       <div className="settings-layout">
         <section className="settings-section">

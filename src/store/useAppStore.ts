@@ -9,6 +9,7 @@ import {
   listCloudTasks,
   listProjects,
   saveAutomation as saveAutomationBridge,
+  saveRouterApiKey,
   startCodex,
   subscribeCodex,
 } from "../lib/bridge";
@@ -26,6 +27,7 @@ import type {
   Project,
   ThreadItem,
   ThreadTokenUsage,
+  RouterConfig,
 } from "../lib/types";
 import {
   showDesktopNotification,
@@ -92,6 +94,7 @@ interface AppState {
   setApprovalPolicy: (policy: string) => void;
   setSandboxMode: (mode: string) => void;
   setExperimentalApi: (enabled: boolean) => Promise<void>;
+  applyRouterConfig: (config: RouterConfig, apiKey?: string) => Promise<void>;
   loadCloudTasks: () => Promise<void>;
   loadAccount: () => Promise<void>;
   loginWithChatGpt: () => Promise<void>;
@@ -201,7 +204,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const [projects, runtime, automations] = await Promise.all([
         listProjects(),
-        startCodex(null, get().experimentalApi),
+        startCodex(
+          null,
+          get().experimentalApi,
+          usePreferencesStore.getState().apiRouter,
+        ),
         listAutomations(),
       ]);
       set({
@@ -661,7 +668,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   setExperimentalApi: async (enabled) => {
     set({ experimentalApi: enabled, connection: "starting" });
     try {
-      const runtime = await startCodex(null, enabled);
+      const runtime = await startCodex(
+        null,
+        enabled,
+        usePreferencesStore.getState().apiRouter,
+      );
       set({
         runtime,
         connection: "connected",
@@ -681,6 +692,22 @@ export const useAppStore = create<AppState>((set, get) => ({
         connection: "error",
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+  },
+
+  applyRouterConfig: async (config, apiKey) => {
+    set({ connection: "starting", error: null });
+    try {
+      if (apiKey?.trim()) await saveRouterApiKey(apiKey.trim());
+      const runtime = await startCodex(null, get().experimentalApi, config);
+      set({ runtime, connection: "connected" });
+      await Promise.all([get().loadThreads(), loadModels(set)]);
+    } catch (error) {
+      set({
+        connection: "error",
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
   },
 

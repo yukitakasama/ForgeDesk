@@ -6,6 +6,9 @@ import type {
   CloudTask,
   CodexMessage,
   Project,
+  RouterConfig,
+  RouterKeyStatus,
+  RouterTestResult,
 } from "./types";
 
 const inTauri =
@@ -18,6 +21,7 @@ export function isTauriRuntime() {
 export async function startCodex(
   cliPath: string | null,
   experimentalApi: boolean,
+  routerConfig?: RouterConfig,
 ): Promise<CliRuntime> {
   if (!inTauri) {
     return {
@@ -31,7 +35,25 @@ export async function startCodex(
   return invoke<CliRuntime>("codex_start", {
     cliPath,
     experimentalApi,
+    routerConfig: routerConfig || null,
   });
+}
+
+export async function saveRouterApiKey(apiKey: string) {
+  if (!inTauri) return;
+  await invoke("router_save_key", { apiKey });
+}
+
+export async function getRouterKeyStatus(): Promise<RouterKeyStatus> {
+  if (!inTauri) return { saved: false, supported: true };
+  return invoke<RouterKeyStatus>("router_key_status");
+}
+
+export async function testApiRouter(
+  config: RouterConfig,
+): Promise<RouterTestResult> {
+  if (!inTauri) return { ok: true, status: 200, latencyMs: 48 };
+  return invoke<RouterTestResult>("router_test", { config });
 }
 
 export async function stopCodex() {

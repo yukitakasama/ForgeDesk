@@ -32,6 +32,24 @@ export interface CapabilityMatrix {
   computerUse: boolean;
 }
 
+export interface RouterConfig {
+  enabled: boolean;
+  upstreamFormat: "openaiChat" | "anthropicMessages";
+  endpoint: string;
+  model: string;
+}
+
+export interface RouterKeyStatus {
+  saved: boolean;
+  supported: boolean;
+}
+
+export interface RouterTestResult {
+  ok: boolean;
+  status: number;
+  latencyMs: number;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -141,7 +159,20 @@ export type ThreadItem =
       type: "collabAgentToolCall";
       id: string;
       status?: string;
-      agentsStates?: Record<string, unknown>;
+      tool?: string;
+      senderThreadId?: string;
+      receiverThreadIds?: string[];
+      prompt?: string;
+      agentsStates?: Record<
+        string,
+        | string
+        | {
+            status?: string;
+            name?: string;
+            task?: string;
+            message?: string;
+          }
+      >;
     }
   | {
       type: "subAgentActivity";
