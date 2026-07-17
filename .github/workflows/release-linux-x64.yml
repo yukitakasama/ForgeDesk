@@ -52,7 +52,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Linux x64 packages
-        run: pnpm tauri build --bundles appimage,deb
+        run: pnpm tauri build --config '{"build":{"beforeBuildCommand":"pnpm build"}}' --bundles appimage,deb
 
       - name: Upload packages to release
         env:
