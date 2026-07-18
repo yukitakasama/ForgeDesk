@@ -299,7 +299,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       model: get().selectedModel || null,
       approvalPolicy: get().approvalPolicy,
       sandboxPolicy: sandboxPolicyFor(get().sandboxMode, project?.root),
-      serviceName: "ForgeDesk",
+      serviceName: "codex+++",
       threadSource: "forgedesk",
     });
     set((state) => ({
@@ -534,7 +534,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               typeof document !== "undefined" &&
               !document.hasFocus());
           if (shouldNotify) {
-            showDesktopNotification("任务已完成", "ForgeDesk 已完成本轮回复。");
+            showDesktopNotification("任务已完成", "codex+++ 已完成本轮回复。");
           }
         }
         void get().loadThreads();

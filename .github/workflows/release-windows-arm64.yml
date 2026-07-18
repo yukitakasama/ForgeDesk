@@ -60,6 +60,6 @@ jobs:
       - name: Archive installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ForgeDesk-${{ env.RELEASE_TAG }}-windows-arm64
+          name: codex-plus-plus-${{ env.RELEASE_TAG }}-windows-arm64
           path: src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*setup.exe
           if-no-files-found: error

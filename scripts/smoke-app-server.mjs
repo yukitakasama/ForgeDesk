@@ -54,7 +54,7 @@ try {
   const initialized = await request("initialize", {
     clientInfo: {
       name: "forgedesk-smoke",
-      title: "ForgeDesk protocol smoke test",
+      title: "codex+++ protocol smoke test",
       version: "0.1.0",
     },
     capabilities: {

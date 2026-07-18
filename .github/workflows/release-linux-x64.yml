@@ -64,7 +64,7 @@ jobs:
       - name: Archive Linux packages
         uses: actions/upload-artifact@v4
         with:
-          name: ForgeDesk-${{ env.RELEASE_TAG }}-linux-x64
+          name: codex-plus-plus-${{ env.RELEASE_TAG }}-linux-x64
           path: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/deb/*.deb

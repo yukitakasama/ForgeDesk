@@ -154,7 +154,7 @@ export default function AutomationsView() {
             <div className="large-empty compact">
               <TimerReset size={24} />
               <h2>还没有自动化</h2>
-              <p>创建计划任务后，它会在 ForgeDesk 或系统托盘运行时执行。</p>
+              <p>创建计划任务后，它会在 codex+++ 或系统托盘运行时执行。</p>
             </div>
           )}
         </section>

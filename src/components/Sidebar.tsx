@@ -50,7 +50,7 @@ export default function Sidebar() {
           F
         </div>
         <div>
-          <strong>ForgeDesk</strong>
+          <strong>codex+++</strong>
           <span>Codex workspace</span>
         </div>
         <span

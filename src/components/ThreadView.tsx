@@ -76,7 +76,7 @@ export default function ThreadView() {
       <div className="blank-state">
         <div className="blank-symbol">F</div>
         <h2>连接你的第一个项目</h2>
-        <p>从左侧添加一个本地目录，ForgeDesk 会将任务上下文限定在该工作区。</p>
+        <p>从左侧添加一个本地目录，codex+++ 会将任务上下文限定在该工作区。</p>
       </div>
     );
   }

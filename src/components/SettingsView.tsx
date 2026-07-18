@@ -76,7 +76,7 @@ const settingsGroups: Array<{
         id: "general",
         label: "常规",
         icon: <Settings2 size={15} />,
-        description: "管理 ForgeDesk 的运行方式和实验能力。",
+        description: "管理 codex+++ 的运行方式和实验能力。",
       },
       {
         id: "appearance",
@@ -392,7 +392,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
               <span>
                 {account
                   ? `${account.type}${account.planType ? ` · ${account.planType}` : ""}`
-                  : "登录由 Codex CLI 安全处理，ForgeDesk 不读取令牌。"}
+                  : "登录由 Codex CLI 安全处理，codex+++ 不读取令牌。"}
               </span>
             </div>
             {account ? (
@@ -413,7 +413,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
           title="凭据安全"
           icon={<ShieldCheck size={17} />}
           lines={[
-            "ForgeDesk 不读取或保存 API Key 与 ChatGPT 令牌。",
+            "codex+++ 不读取或保存 API Key 与 ChatGPT 令牌。",
             "所有认证状态均由本机 Codex CLI 管理。",
           ]}
         />
@@ -790,7 +790,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
             >
               <header>
                 <div>
-                  <span className="eyebrow">ForgeDesk</span>
+                  <span className="eyebrow">codex+++</span>
                   <h2 id="licenses-title">开源许可证</h2>
                 </div>
                 <button
@@ -904,7 +904,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
           />
           <SettingRow
             label="UI 字号"
-            description="调整 ForgeDesk 界面使用的基准字号"
+            description="调整 codex+++ 界面使用的基准字号"
             control={
               <AppearanceNumberInput
                 label="UI 字号"
@@ -954,7 +954,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
         <SettingsGroup title="本地 API 路由">
           <SettingRow
             label="启用本地路由"
-            description="Codex 请求仅发送到 127.0.0.1，再由 ForgeDesk 转换并转发到上游。"
+            description="Codex 请求仅发送到 127.0.0.1，再由 codex+++ 转换并转发到上游。"
             control={
               <SettingsSwitch
                 checked={apiRouter.enabled}
@@ -1167,7 +1167,7 @@ function SettingsContent({ page }: { page: SettingsPage }) {
     shortcuts: ["快捷键", "使用 Enter 发送消息，Shift + Enter 在输入框中换行。"],
     hooks: ["Codex Hooks", "Hooks 由扩展系统管理，可前往“插件”查看已安装资源。"],
     git: ["Git 集成", "任务中的文件变更会自动投影到工作台 Diff 检查器。"],
-    worktrees: ["隔离工作树", "ForgeDesk 可为并行任务创建独立 Git worktree。"],
+    worktrees: ["隔离工作树", "codex+++ 可为并行任务创建独立 Git worktree。"],
     archived: ["已归档任务", "归档任务管理将在任务列表接入后显示在这里。"],
   }[page] || ["设置", "此设置项将在后续版本中提供。"];
 

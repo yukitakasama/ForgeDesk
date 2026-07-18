@@ -5,11 +5,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 $target = Invoke-RestMethod "http://127.0.0.1:$Port/json" |
-    Where-Object { $_.type -eq "page" -and $_.title -eq "ForgeDesk" } |
+    Where-Object { $_.type -eq "page" -and $_.title -eq "codex+++" } |
     Select-Object -First 1
 
 if (-not $target) {
-    throw "ForgeDesk WebView debug target was not found"
+    throw "codex+++ WebView debug target was not found"
 }
 
 $socket = [System.Net.WebSockets.ClientWebSocket]::new()

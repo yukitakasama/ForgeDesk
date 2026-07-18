@@ -60,7 +60,7 @@ try {
   const initialized = await request("initialize", {
     clientInfo: {
       name: "forgedesk-history-inspector",
-      title: "ForgeDesk history inspector",
+      title: "codex+++ history inspector",
       version: "0.1.0",
     },
     capabilities: {
